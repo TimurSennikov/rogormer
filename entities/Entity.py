@@ -4,6 +4,8 @@ class Entity:
         self.position = None
         self.todestroy = False
 
+        self.active_sprite = None
+
         self.health = 100
 
     def final_words(self):

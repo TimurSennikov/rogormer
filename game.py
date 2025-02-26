@@ -1,6 +1,5 @@
 import pygame
 import pygame.locals
-import math
 
 from entities import *
 from config import *
@@ -19,6 +18,7 @@ class Game:
         self.obstacle = pygame.image.load(obstacle)
 
         self.first_start_of_level = True
+        self.storyteller = TextOverlay()
 
     def mainloop(self):
         clock.tick(60)
@@ -41,12 +41,15 @@ class Game:
                 entity.final_words()
                 del entities[i]
 
-        if self.first_start_of_level:
-            storyteller = TextOverlay()
+        for i, b in enumerate(bullets):
+            b.tick()
+            if b.get_todestroy():
+                del bullets[i]
 
+        if self.first_start_of_level:
             for i in range(3, -1, -1):
-                storyteller.set_text(str(i))
-                storyteller.draw()
+                self.storyteller.set_text(str(i))
+                self.storyteller.draw()
                 pygame.time.delay(1000)
 
                 pygame.display.update()
@@ -55,6 +58,17 @@ class Game:
 
         pygame.display.update()
 
+        if self.get_enemy_count() == 0:
+            self.storyteller = TextOverlay()
+            self.storyteller.set_text("Уровень пройден!")
+            self.storyteller.draw()
+
+            pygame.display.update()
+            pygame.time.delay(5000)
+
+            return False
+        return True
+
     def draw_obstacle(self, x: int, y: int):
         screen.blit(self.obstacle, (x, y))
 
@@ -62,10 +76,23 @@ class Game:
         for i in obstacles:
             self.draw_obstacle(i.position[0], i.position[1])
 
+    def create_enemy(self, enemy):
+        entities.append(enemy)
+
     def setup_level(self, enemy_count):
-        for entity in range(enemy_count):
-            enemy = AIEnemy(["player"], ["sprite/enemy.png"], "sprite/enemy_pain.png")
-            entities.append(enemy)
+        for i in range(enemy_count):
+            self.create_enemy(AIEnemy(["player"], ["sprite/enemy.png"], "sprite/enemy_pain.png"))
+
+    def get_enemy_count(self):
+        c = 0
+        for i in entities:
+            if i.get_name() == "enemy":
+                c += 1
+
+        return c
+
+    def set_map(self, m: list):
+        obstacles = m
 
     def show_story(self, phrases: list, backgrounds: list):
         storyteller = TextOverlay()

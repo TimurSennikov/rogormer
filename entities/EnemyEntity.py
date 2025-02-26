@@ -16,3 +16,5 @@ class EnemyEntity(Entity):
 
         self.in_pain = False
         self.last_pain = 0
+
+        self.damage = 10

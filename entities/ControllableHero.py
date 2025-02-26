@@ -3,6 +3,8 @@ import pygame
 from config import *
 from .Entity import *
 
+from weapons import *
+
 class ControllableHero(Entity):
     def __init__(self, sprite: list, attacksprite: str, blinkinterval=10, blinktimes=10):
         Entity.__init__(self, "player")
@@ -34,6 +36,8 @@ class ControllableHero(Entity):
         self.attack_sprite = pygame.image.load(attacksprite)
         self.attacking = False
         self.since_attack = 0
+
+        self.current_weapon = FireThrower()
 
         self.font = pygame.font.Font(None, 64) # каждый раз открывать шрифт страшно затратно
 
@@ -87,9 +91,12 @@ class ControllableHero(Entity):
                 self.since_attack = 0
                 self.attacking = True
 
+        if keys[pygame.K_r]:
+            self.current_weapon.fire(self.position[0] + 15, self.position[1] + 120, self.sprite_inverted)
+
     def draw(self):
         if self.health > 0:
-            text = self.font.render(str(self.health) + " HP", True, (0, 255, 0), (0, 0, 128))
+            text = self.font.render(str(self.health) + " HP " + str(self.current_weapon.ammo) + " / " + str(self.current_weapon.max_ammo) + " патр.", True, (0, 255, 0), (0, 0, 128))
 
             screen.blit(self.active_sprite, self.position)
             screen.blit(text, (10, 10))
@@ -114,16 +121,17 @@ class ControllableHero(Entity):
                 continue
 
             epos = entity.get_position()
-            if self.position[0] - epos[0] < self.active_sprite.get_width() and self.position[0] - epos[0] > -self.active_sprite.get_width() and self.position[1] - epos[1] < self.active_sprite.get_height() and self.position[1] - epos[1] > -self.active_sprite.get_height():
-                if entity.get_name() == "enemy":
-                    if not self.attacking and self.blinktimes == 0 and self.health > 0:
-                        self.blinktimes = self.def_blinktimes
-                        self.health -= 10
-                        if self.health <= 0:
-                            self.die()
-                    elif self.attacking and not entity.in_pain:
-                        entity.health -= 100
-                        self.since_attack += 10
+            if not self.attacking:
+                if self.position[0] - epos[0] < self.active_sprite.get_width() and self.position[0] - epos[0] > -self.active_sprite.get_width() and self.position[1] - epos[1] < self.active_sprite.get_height() and self.position[1] - epos[1] > -self.active_sprite.get_height():
+                    if entity.get_name() == "enemy":
+                        if self.blinktimes == 0 and self.health > 0:
+                            self.blinktimes = self.def_blinktimes
+                            self.health -= entity.damage
+                            if self.health <= 0:
+                                self.die()
+            else:
+                if self.position[0] - epos[0] < self.active_sprite.get_width() and self.position[0] - epos[0] > -self.active_sprite.get_width() and self.position[1] - epos[1] < self.active_sprite.get_height() and self.position[1] - epos[1] > -self.active_sprite.get_height():
+                    entity.health -= 1
 
     def next_sprite(self):
         if self.active_sprite_num + 1 < len(self.sprites):
@@ -137,6 +145,8 @@ class ControllableHero(Entity):
             self.active_sprite = pygame.transform.flip(self.active_sprite, True, False)
 
     def tick(self):
+        self.current_weapon.tick()
+
         self.check_collisions()
 
         if self.last_key[pygame.K_RIGHT] or self.last_key[pygame.K_LEFT]:
@@ -155,8 +165,7 @@ class ControllableHero(Entity):
             if not self.injump:
                 self.impulse = 0
 
-        if self.position[1] + self.impulse >= 0:
-            self.position[1] += self.impulse
+        self.position[1] += self.impulse
 
         if self.impulse >= 0 and (self.position[1] >= SIZE[1] - self.active_sprite.get_height() or self.is_on_obstacle()):
             self.injump = False

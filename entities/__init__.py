@@ -5,3 +5,5 @@ from .Obstacle import *
 from .AIEnemy import *
 from .ControllableHero import *
 from .VitaChamber import *
+
+from .Nyanya import *

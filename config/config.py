@@ -14,5 +14,7 @@ game_running = True
 entities = []
 obstacles = []
 
+bullets = [] # пули
+
 for i in range(10):
         obstacles.append(Obstacle(random.randint(0, 192) * 10, i * 100))
